@@ -10,21 +10,22 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 target_len = [
     (10, 100),
     (60, 130),
-    (60, 300),
     (60, 250),
     (60, 300),
-    (120, 300),
-    (120, 350),
-    (60, 300),
-    (120, 450),
+    (60, 350),
+    (60, 415),
+    (60, 500),
+    (60, 550),
+    (60, 700),
+    (60, 750),
+    (60, 800),
 ]  # здесь можно менять числа
 TXT_FILE = "testtext.txt"
-JSON_FILE = "../../Downloads/Telegram Desktop/vocab.json"
+JSON_FILE = "jsons/vocab.json"
 JSON_INFINITIVE = "infinitives.json"
-JSON_SYNONYMS = "synonyms.json"
-JSON_UNIQUE = "unique_words.json"
-grade = 5
-section = 8  # можно менять
+JSON_SYNONYMS = "jsons/synonyms.json"
+JSON_UNIQUE = "jsons/unique_words.json"
+JSON_SAME_ROOTS = "jsons/sameroots.json"
 
 
 punctuation = punctuation + "«»" + '"' + "”" + "“" + "“" + "”" + "—" + "–"
@@ -53,17 +54,19 @@ def process_synonyms(input_file: str) -> dict[str, list[str]]:
 def Arseniy(text: str):
     paragraphs = text.split("\n")
     paragraphs = [p.strip() for p in paragraphs if p.strip() and p not in punctuation]
-    with open("../../Downloads/Telegram Desktop/infinitives.json", "r", encoding="utf-8") as file:
+    with open("infinitives.json", "r", encoding="utf-8") as file:
         infs = json.load(file)
     organized_data = process_json(JSON_FILE)
     synonyms = process_synonyms(JSON_SYNONYMS)
+    same_roots = process_synonyms(JSON_SAME_ROOTS)
+
     unique_words = process_json(JSON_UNIQUE)
 
     for start in range(len(paragraphs)):
         current_chunk = ""
         for end in range(start, len(paragraphs)):
             current_chunk = "\n".join(paragraphs[start : end + 1])
-            for g, sections in [(1, range(5, 9)), (9, range(7, 14))]:
+            for g, sections in [(5, range(1, 13))]: # now change grade and sections here
                 if len(current_chunk.split()) > target_len[g - 1][1]:
                     break
                 elif len(current_chunk.split()) < target_len[g - 1][0]:
@@ -74,6 +77,7 @@ def Arseniy(text: str):
                         organized_data,
                         unique_words,
                         synonyms,
+                        same_roots,
                         infs,
                         g,
                         s,
@@ -85,6 +89,7 @@ def analyze_chunk(
     organized_data: dict[int, dict[int, list[str]]],
     unique_words: dict[int, dict[int, list[str]]],
     synonyms: dict[str, list[str]],
+    same_roots: dict[str, list[str]],
     infs: dict[str, GuessOptions],
     grade: int,
     section: int,
@@ -103,7 +108,7 @@ def analyze_chunk(
 
     old_words = list[str]()
     for i in range(grade):
-        for j, words in organized_data[i].items():  # type: ignore
+        for j, words in organized_data[i].items():
             old_words.extend(words)
             if j == section:
                 break
@@ -111,13 +116,17 @@ def analyze_chunk(
     uwords = unique_words[grade][section]
 
     for h, word in enumerate(transformed_words):
-        if word in synonyms and word not in old_words:
+        if word in synonyms and word in same_roots and word not in uwords:
             good_synonyms = str()
+            good_same_roots = str()
             for synonym in synonyms[word]:
-                if synonym in old_words:
+                if synonym in new_words:
                     good_synonyms += "!" + synonym
-            if good_synonyms:
-                transformed_words[h] = good_synonyms
+            for same_root in same_roots[word]:
+                if same_root in new_words:
+                    good_same_roots += "#" + same_root
+            if good_synonyms or good_same_roots:
+                transformed_words[h] = good_synonyms + good_same_roots
         else:
             continue
 
@@ -138,8 +147,8 @@ def analyze_chunk(
     print(new_words_cov)
     print(unique_words_cov)
 
-    if unknown_per < 0.75 and new_words_cov > 2 and unique_words_cov > 2:
-        with open("../../Downloads/Telegram Desktop/filtered_chunks.txt", "a", encoding="utf-8") as output_file:
+    if unknown_per < 1 and new_words_cov > 3 and unique_words_cov >= 0:  # benchmarks
+        with open("filtered_chunks.txt", "a", encoding="utf-8") as output_file:
             output_file.write(
                 chunk
                 + "\n\n"
@@ -160,12 +169,12 @@ def analyze_chunk(
 def main():
     with open(TXT_FILE, "r", encoding="utf-8") as txt_file:
         text = txt_file.read()
-    with open("../../Downloads/Telegram Desktop/filtered_chunks.txt", "w", encoding="utf-8") as _:
+    with open("filtered_chunks.txt", "w", encoding="utf-8") as _:
         pass
 
     Arseniy(text)
 
-    with open("../../Downloads/Telegram Desktop/filtered_chunks.txt", "r", encoding="utf-8") as filtered_file:
+    with open("filtered_chunks.txt", "r", encoding="utf-8") as filtered_file:
         filtered_content = filtered_file.read()
     print("Filtered Chunks:")
     print(filtered_content)

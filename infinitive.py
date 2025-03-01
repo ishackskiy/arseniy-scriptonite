@@ -35,7 +35,7 @@ def get_csv_inf(entry: str):
     return entry[: entry.rfind("/")]
 
 
-usage = load_usage("usage.csv")
+usage = load_usage("jsons/usage.csv")
 
 
 # from kaznlp.tokenization.tokhmm import TokenizerHMM
