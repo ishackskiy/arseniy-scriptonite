@@ -42,7 +42,7 @@ def process_json(input_file: str) -> dict[int, dict[int, list[str]]]:
         for j, words in chapters.items():
             chapter = int(j)
             organized_data[grade][chapter] = words
-    return organized_data  # type: ignore
+    return organized_data
 
 
 def process_synonyms(input_file: str) -> dict[str, list[str]]:
@@ -66,7 +66,7 @@ def Arseniy(text: str):
         current_chunk = ""
         for end in range(start, len(paragraphs)):
             current_chunk = "\n".join(paragraphs[start : end + 1])
-            for g, sections in [(5, range(1, 13))]: # now change grade and sections here
+            for g, sections in [(6, range(1, 15))]: # now change grade and sections here
                 if len(current_chunk.split()) > target_len[g - 1][1]:
                     break
                 elif len(current_chunk.split()) < target_len[g - 1][0]:
@@ -152,6 +152,7 @@ def analyze_chunk(
             output_file.write(
                 chunk
                 + "\n\n"
+                + "Секция: " + str(section) + " | "  # Add section info here
                 + "Количество новых слов: "
                 + str(new_words_cov)
                 + "\nНовые слова: "
