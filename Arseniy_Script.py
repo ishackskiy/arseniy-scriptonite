@@ -4,6 +4,7 @@ import json
 from infinitive import transform, GuessOptions
 from string import punctuation
 from collections import defaultdict
+from typing import Dict, List, Set, Tuple, Any, Optional, Union
 
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -33,7 +34,7 @@ punctuation = punctuation + "«»" + '"' + "\"" + "'" + "-" + "—" + "–"
 punctuation_set = set(punctuation)
 
 
-def process_json(input_file: str) -> dict[int, dict[int, list[str]]]: # for vocab and uwords
+def process_json(input_file: str) -> Dict[int, Dict[int, List[str]]]: # for vocab and uwords
     with open(input_file, "r", encoding="utf-8") as file:
         data = json.load(file)
 
@@ -47,13 +48,16 @@ def process_json(input_file: str) -> dict[int, dict[int, list[str]]]: # for voca
     return organized_data
 
 
-def process_json2(input_file: str) -> dict[str, list[str]]: # for synonyms and same roots
+def process_json2(input_file: str) -> Dict[str, List[str]]: # for synonyms and same roots
     with open(input_file, "r", encoding="utf-8") as file:
         synonyms = json.load(file)
     return synonyms
 
 
-def build_word_sets(organized_data, unique_words, grade, section): # pre-build sets for better performance
+def build_word_sets(organized_data: Dict[int, Dict[int, List[str]]], 
+                   unique_words: Dict[int, Dict[int, List[str]]], 
+                   grade: int, 
+                   section: int) -> Tuple[Set[str], Set[str], Set[str]]: # pre-build sets for better performance
     old_words_set = set()
     for i in range(grade):
         for j, words in organized_data[i].items():
@@ -67,7 +71,7 @@ def build_word_sets(organized_data, unique_words, grade, section): # pre-build s
     return old_words_set, new_words_set, uwords_set
 
 
-def Arseniy(text: str): # main function - takes text and filters it
+def Arseniy(text: str) -> None: # main function - takes text and filters it
     paragraphs = [p.strip() for p in text.split("\n") if p.strip() and not all(c in punctuation_set for c in p)]
     
     print(f"Total paragraphs found: {len(paragraphs)}")  # Debug print
@@ -150,18 +154,18 @@ def Arseniy(text: str): # main function - takes text and filters it
 
 def analyze_chunk(
     chunk: str,
-    chunk_words: list[str],
+    chunk_words: List[str],
     chunk_length: int,
-    old_words_set: set[str],
-    new_words_set: set[str],
-    uwords_set: set[str],
-    synonyms: dict[str, list[str]],
-    same_roots: dict[str, list[str]],
-    infs: dict[str, GuessOptions],
-    transformed_cache: dict[str, list[str]],
+    old_words_set: Set[str],
+    new_words_set: Set[str],
+    uwords_set: Set[str],
+    synonyms: Dict[str, List[str]],
+    same_roots: Dict[str, List[str]],
+    infs: Dict[str, Any],
+    transformed_cache: Dict[str, List[str]],
     grade: int,
     section: int,
-): # helper function - analyzes each separate chunk
+) -> Tuple[bool, Set[str], Set[str]]: # helper function - analyzes each separate chunk
     transformed_words = []
     
     for word in chunk_words:
@@ -211,7 +215,7 @@ def analyze_chunk(
     return meets_criteria, new_words_intext, unique_words_intext
 
 
-def write_chunk_to_file(chunk, new_words_intext, unique_words_intext): # write chunk to file
+def write_chunk_to_file(chunk: str, new_words_intext: Set[str], unique_words_intext: Set[str]) -> None: # write chunk to file
     with open("filtered_chunks.txt", "a", encoding="utf-8") as output_file:
         output_file.write(
             chunk
@@ -230,7 +234,7 @@ def write_chunk_to_file(chunk, new_words_intext, unique_words_intext): # write c
         )
 
 
-def main():
+def main() -> None:
     with open(TXT_FILE, "r", encoding="utf-8") as txt_file:
         text = txt_file.read()
     
