@@ -97,13 +97,14 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
     section_headers_written: Dict[int, bool] = {}
 
     for g, sections in [
-        (2, range(1, 8)),
-        (3, range(1, 13)),
-        (4, range(1, 13)),
-        (5, range(1, 13)),
-        (6, range(1, 13)),
-        (7, range(1, 13)),
-    ]:  # now change grade and sections here
+        (2, range(1, 9)),
+        (3, range(1, 9)),
+        (4, range(1, 9)),
+        (5, range(1, 14)),
+        (6, range(1, 16)),
+        (7, range(1, 14)),
+        (8, range(1, 14)),
+    ]:  # now change grade and sections here, IMPORTANT: WRITE LAST SECTION # + 1
         print(f"Processing grade {g}")
         for s in sections:
             print(f"Processing section {s}")
@@ -160,7 +161,7 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
                             with open(
                                 "filtered_chunks.txt", "a", encoding="utf-8"
                             ) as output_file:
-                                output_file.write(f"РАЗДЕЛ: {s}\n\n\n\n")
+                                output_file.write(f"КЛАСС: {g} | РАЗДЕЛ: {s}\n\n\n\n")
                             section_headers_written[s] = True
                             print(f"found a text for the section: {s}!!!")
 
