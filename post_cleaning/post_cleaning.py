@@ -25,8 +25,26 @@ def compare_new_words(chunk1, chunk2):
     new_words2 = chunk2[chunk2[0] + 1]
     return bool(set(new_words1) & set(new_words2))
 
+# additional filtering based on new words
+def filter_new(array, target):
+    output = []
+    for i in range(len(array)):
+        if len(array[i][-4]) >= target:
+            output.append(array[i])
+    
+    return output
+
+# additional filtering based on unique words
+def filter_unique(array, target):
+    output = []
+    for i in range(len(array)):
+        if len(array[i][-3]) >= target:
+            output.append(array[i])
+    
+    return output
+
 # put the processed data into an array of processed chunks - pchunks
-filename = "post_cleaning.txt"
+filename = "post_cleaning/post_cleaning.txt"
 chunks = read_and_split_file(filename)
 pchunks = []
 
@@ -68,7 +86,7 @@ while ocounter < len(pchunks):
 
 print(len(pchunks))
 # add info about grade and section for each excerpt
-with open("vocab.json", 'r', encoding='utf-8') as file:
+with open("jsons/vocab.json", 'r', encoding='utf-8') as file:
     file = json.load(file)
     for i in range(len(excerpts)):
         all_locations = []
@@ -97,12 +115,26 @@ while counter < len(excerpts):
     else:
         counter = counter + 1
 
+# additional filtering based on unique and new words
+filtered_excerpts = filter_new(filtered_excerpts, 6)
+filtered_excerpts = filter_unique(filtered_excerpts, 0)
+
+# make the empty lists of unique words really empty (otherwise they are arrays with a single elemnet of '' (empty string))
+for i in range(len(filtered_excerpts)):
+    if filtered_excerpts[i][-3] == ['']:
+        filtered_excerpts[i][-3] = []
+
+# order the excerpts based on subsections
+filtered_excerpts.sort(key=lambda x: x[-1])
+
 # print the post-cleaned data into to_NE.txt and print the number of excerpts in the terminal
+with open("potential_chunks/to_NE.txt", "w", encoding="utf-8") as output_file:
+    output_file.write("")
 for i in range(len(filtered_excerpts)):
     text = ''
     for j in range(filtered_excerpts[i][0]):
         text = text + filtered_excerpts[i][j + 1]
-    with open("to_NE.txt", "a", encoding="utf-8") as output_file:
+    with open("potential_chunks/to_NE.txt", "a", encoding="utf-8") as output_file:
         output_file.write(
             text
             + "\n\n"
