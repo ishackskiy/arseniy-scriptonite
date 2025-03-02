@@ -158,10 +158,6 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
                     if meets_criteria:
                         chunks_written += 1
                         if not section_headers_written[s]:
-                            with open(
-                                "filtered_chunks.txt", "a", encoding="utf-8"
-                            ) as output_file:
-                                output_file.write(f"КЛАСС: {g} | РАЗДЕЛ: {s}\n\n\n\n")
                             section_headers_written[s] = True
                             print(f"found a text for the section: {s}!!!")
 
@@ -248,13 +244,12 @@ def write_chunk_to_file(
             + "\n\n"
             + "Количество новых слов: "
             + str(len(new_words_intext))
-            + " | "
-            + "Новые слова: "
+            + "\nНовые слова: "
             + ", ".join(new_words_intext)
             + "\nКоличество уникальных слов: "
             + str(len(unique_words_intext))
             + " | "
-            + "Уникальные слова: "
+            + "\nУникальные слова: "
             + ", ".join(unique_words_intext)
             + "\n"
             + ("-" * 10)
