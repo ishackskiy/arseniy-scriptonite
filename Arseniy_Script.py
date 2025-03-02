@@ -1,10 +1,9 @@
 import sys
 import io
 import json
-from infinitive import transform, GuessOptions
+from infinitive import transform
 from string import punctuation
-from collections import defaultdict
-from typing import Dict, List, Set, Tuple, Any, Optional, Union
+from typing import Dict, List, Set, Tuple, Any
 
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -30,11 +29,13 @@ JSON_UNIQUE = "jsons/unique_words.json"
 JSON_SAME_ROOTS = "jsons/sameroots.json"
 
 
-punctuation = punctuation + "«»" + '"' + "\"" + "'" + "-" + "—" + "–"
+punctuation = punctuation + "«»" + '"' + '"' + "'" + "-" + "—" + "–"
 punctuation_set = set(punctuation)
 
 
-def process_json(input_file: str) -> Dict[int, Dict[int, List[str]]]: # for vocab and uwords
+def process_json(
+    input_file: str,
+) -> Dict[int, Dict[int, List[str]]]:  # for vocab and uwords
     with open(input_file, "r", encoding="utf-8") as file:
         data = json.load(file)
 
@@ -45,48 +46,56 @@ def process_json(input_file: str) -> Dict[int, Dict[int, List[str]]]: # for voca
         for j, words in chapters.items():
             chapter = int(j)
             organized_data[grade][chapter] = words
-    return organized_data
+    return organized_data  # type: ignore
 
 
-def process_json2(input_file: str) -> Dict[str, List[str]]: # for synonyms and same roots
+def process_json2(
+    input_file: str,
+) -> Dict[str, List[str]]:  # for synonyms and same roots
     with open(input_file, "r", encoding="utf-8") as file:
         synonyms = json.load(file)
     return synonyms
 
 
-def build_word_sets(organized_data: Dict[int, Dict[int, List[str]]], 
-                   unique_words: Dict[int, Dict[int, List[str]]], 
-                   grade: int, 
-                   section: int) -> Tuple[Set[str], Set[str], Set[str]]: # pre-build sets for better performance
-    old_words_set = set()
+def build_word_sets(
+    organized_data: Dict[int, Dict[int, List[str]]],
+    unique_words: Dict[int, Dict[int, List[str]]],
+    grade: int,
+    section: int,
+) -> Tuple[Set[str], Set[str], Set[str]]:  # pre-build sets for better performance
+    old_words_set = set[str]()
     for i in range(grade):
         for j, words in organized_data[i].items():
             old_words_set.update(words)
             if j == section:
                 break
-    
+
     new_words_set = set(organized_data[grade][section])
     uwords_set = set(unique_words[grade][section])
-    
+
     return old_words_set, new_words_set, uwords_set
 
 
-def Arseniy(text: str) -> None: # main function - takes text and filters it
-    paragraphs = [p.strip() for p in text.split("\n") if p.strip() and not all(c in punctuation_set for c in p)]
-    
+def Arseniy(text: str) -> None:  # main function - takes text and filters it
+    paragraphs = [
+        p.strip()
+        for p in text.split("\n")
+        if p.strip() and not all(c in punctuation_set for c in p)
+    ]
+
     print(f"Total paragraphs found: {len(paragraphs)}")  # Debug print
-    
+
     with open("infinitives.json", "r", encoding="utf-8") as file:
-        infs = json.load(file)
-    organized_data = process_json(JSON_FILE)
-    unique_words = process_json(JSON_UNIQUE)
-    synonyms = process_json2(JSON_SYNONYMS)
-    same_roots = process_json2(JSON_SAME_ROOTS)
-    
-    transformed_cache = {}
-    
-    section_headers_written = {}
-    
+        infs: Dict[str, Any] = json.load(file)
+    organized_data: Dict[int, Dict[int, List[str]]] = process_json(JSON_FILE)
+    unique_words: Dict[int, Dict[int, List[str]]] = process_json(JSON_UNIQUE)
+    synonyms: Dict[str, List[str]] = process_json2(JSON_SYNONYMS)
+    same_roots: Dict[str, List[str]] = process_json2(JSON_SAME_ROOTS)
+
+    transformed_cache: Dict[str, List[str]] = {}
+
+    section_headers_written: Dict[int, bool] = {}
+
     for g, sections in [(7, range(1, 13))]:  # now change grade and sections here
         print(f"Processing grade {g}")
         for s in sections:
@@ -96,60 +105,66 @@ def Arseniy(text: str) -> None: # main function - takes text and filters it
             )
 
             section_headers_written[s] = False
-                        
+
             max_chunk_paragraphs = 50
             chunks_checked = 0
             chunks_written = 0
-            
+
             for start in range(len(paragraphs)):
                 if start % 100 == 0:
-                    print(f"Processing chunks starting at paragraph {start}/{len(paragraphs)}")
-                
+                    print(
+                        f"Processing chunks starting at paragraph {start}/{len(paragraphs)}"
+                    )
+
                 max_end = min(start + max_chunk_paragraphs, len(paragraphs))
-                
+
                 for end in range(start, max_end):
                     chunks_checked += 1
                     current_chunk = "\n".join(paragraphs[start : end + 1])
                     chunk_words = current_chunk.split()
                     chunk_length = len(chunk_words)
-                    
+
                     if chunk_length > target_len[g - 1][1]:
                         continue
-                    
+
                     if chunk_length < target_len[g - 1][0]:
                         continue
-                    
-                    meets_criteria, new_words_intext, unique_words_intext = analyze_chunk(
-                        current_chunk,
-                        chunk_words,
-                        chunk_length,
-                        old_words_set,
-                        new_words_set,
-                        uwords_set,
-                        synonyms,
-                        same_roots,
-                        infs,
-                        transformed_cache,
-                        g,
-                        s,
+
+                    meets_criteria, new_words_intext, unique_words_intext = (
+                        analyze_chunk(
+                            current_chunk,
+                            chunk_words,
+                            chunk_length,
+                            old_words_set,
+                            new_words_set,
+                            uwords_set,
+                            synonyms,
+                            same_roots,
+                            infs,
+                            transformed_cache,
+                            g,
+                            s,
+                        )
                     )
-                    
+
                     # If the chunk meets criteria, write to file
                     if meets_criteria:
                         chunks_written += 1
                         if not section_headers_written[s]:
-                            with open("filtered_chunks.txt", "a", encoding="utf-8") as output_file:
+                            with open(
+                                "filtered_chunks.txt", "a", encoding="utf-8"
+                            ) as output_file:
                                 output_file.write(f"РАЗДЕЛ: {s}\n\n\n\n")
                             section_headers_written[s] = True
                             print(f"found a text for the section: {s}!!!")
-                        
+
                         write_chunk_to_file(
-                            current_chunk,
-                            new_words_intext,
-                            unique_words_intext
+                            current_chunk, new_words_intext, unique_words_intext
                         )
-            
-            print(f"Section {s} complete. Checked {chunks_checked} chunks, wrote {chunks_written} chunks")
+
+            print(
+                f"Section {s} complete. Checked {chunks_checked} chunks, wrote {chunks_written} chunks"
+            )
 
 
 def analyze_chunk(
@@ -165,9 +180,9 @@ def analyze_chunk(
     transformed_cache: Dict[str, List[str]],
     grade: int,
     section: int,
-) -> Tuple[bool, Set[str], Set[str]]: # helper function - analyzes each separate chunk
-    transformed_words = []
-    
+) -> Tuple[bool, Set[str], Set[str]]:  # helper function - analyzes each separate chunk
+    transformed_words: List[str] = []
+
     for word in chunk_words:
         if word in transformed_cache:
             transformed_words.extend(transformed_cache[word])
@@ -185,23 +200,23 @@ def analyze_chunk(
         if word in synonyms and word in same_roots and word not in uwords_set:
             good_synonyms = ""
             good_same_roots = ""
-            
+
             for synonym in synonyms[word]:
                 if synonym in new_words_set:
                     good_synonyms += "!" + synonym
-            
+
             for same_root in same_roots[word]:
                 if same_root in new_words_set:
                     good_same_roots += "#" + same_root
-            
+
             if good_synonyms or good_same_roots:
                 transformed_words[h] = good_synonyms + good_same_roots
-    
+
     unknown_words = sum(1 for word in transformed_words if word not in old_words_set)
     unknown_per = unknown_words / chunk_length
-    
-    new_words_intext = set()
-    unique_words_intext = set()    
+
+    new_words_intext: Set[str] = set()
+    unique_words_intext: Set[str] = set()
     for word in transformed_words:
         if word in new_words_set:
             new_words_intext.add(word)
@@ -209,23 +224,27 @@ def analyze_chunk(
             unique_words_intext.add(word)
     new_words_cov = len(new_words_intext)
     unique_words_cov = len(unique_words_intext)
-    
+
     meets_criteria = unknown_per < 1 and new_words_cov > 3 and unique_words_cov >= 0
-    
+
     return meets_criteria, new_words_intext, unique_words_intext
 
 
-def write_chunk_to_file(chunk: str, new_words_intext: Set[str], unique_words_intext: Set[str]) -> None: # write chunk to file
+def write_chunk_to_file(
+    chunk: str, new_words_intext: Set[str], unique_words_intext: Set[str]
+) -> None:  # write chunk to file
     with open("filtered_chunks.txt", "a", encoding="utf-8") as output_file:
         output_file.write(
             chunk
             + "\n\n"
             + "Количество новых слов: "
-            + str(len(new_words_intext)) + " | "
+            + str(len(new_words_intext))
+            + " | "
             + "Новые слова: "
             + ", ".join(new_words_intext)
             + "\nКоличество уникальных слов: "
-            + str(len(unique_words_intext)) + " | "
+            + str(len(unique_words_intext))
+            + " | "
             + "Уникальные слова: "
             + ", ".join(unique_words_intext)
             + "\n"
@@ -237,14 +256,11 @@ def write_chunk_to_file(chunk: str, new_words_intext: Set[str], unique_words_int
 def main() -> None:
     with open(TXT_FILE, "r", encoding="utf-8") as txt_file:
         text = txt_file.read()
-    
+
     with open("filtered_chunks.txt", "w", encoding="utf-8"):
         pass
-    
+
     Arseniy(text)
-    
-    with open("filtered_chunks.txt", "r", encoding="utf-8") as filtered_file:
-        filtered_content = filtered_file.read()
 
 
 if __name__ == "__main__":
