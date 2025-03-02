@@ -119,7 +119,7 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
             chunks_written = 0
 
             for start in range(len(paragraphs)):
-                if start % 100 == 0:
+                if start % 500 == 0:
                     print(
                         f"Processing chunks starting at paragraph {start}/{len(paragraphs)}"
                     )
@@ -160,9 +160,7 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
                         write_chunk_to_file(
                             modified_chunk, new_words_intext, unique_words_intext
                         )
-            print(
-                f"Section {s} complete. Checked {chunks_checked} chunks, wrote {chunks_written} chunks"
-            )
+            print(f"Section {s} complete. Wrote {chunks_written} chunks")
 
 
 def analyze_chunk(
