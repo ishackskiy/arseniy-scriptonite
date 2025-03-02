@@ -1,3 +1,5 @@
 .vscode
 *_pycache__
 data/infinitives.json
+potential_chunks/to_NE.txt
+post_cleaning/post_cleaning.txt

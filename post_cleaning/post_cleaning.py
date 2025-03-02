@@ -86,7 +86,7 @@ while ocounter < len(pchunks):
 
 print(len(pchunks))
 # add info about grade and section for each excerpt
-with open("jsons/vocab.json", 'r', encoding='utf-8') as file:
+with open("data/vocab.json", 'r', encoding='utf-8') as file:
     file = json.load(file)
     for i in range(len(excerpts)):
         all_locations = []
@@ -116,7 +116,7 @@ while counter < len(excerpts):
         counter = counter + 1
 
 # additional filtering based on unique and new words
-filtered_excerpts = filter_new(filtered_excerpts, 6)
+filtered_excerpts = filter_new(filtered_excerpts, 4)
 filtered_excerpts = filter_unique(filtered_excerpts, 0)
 
 # make the empty lists of unique words really empty (otherwise they are arrays with a single elemnet of '' (empty string))
@@ -125,6 +125,7 @@ for i in range(len(filtered_excerpts)):
         filtered_excerpts[i][-3] = []
 
 # order the excerpts based on subsections
+filtered_excerpts.sort(key=lambda x: x[-2])
 filtered_excerpts.sort(key=lambda x: x[-1])
 
 # print the post-cleaned data into to_NE.txt and print the number of excerpts in the terminal
@@ -138,7 +139,8 @@ for i in range(len(filtered_excerpts)):
         output_file.write(
             text
             + "\n\n"
-            + "Количество новых слов: "
+            + "Длина отрывка: " + str(len(text)) 
+            + "\nКоличество новых слов: "
             + str(len(filtered_excerpts[i][-4]))
             + "\nНовые слова: "
             + ", ".join(filtered_excerpts[i][-4])
