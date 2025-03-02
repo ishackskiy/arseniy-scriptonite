@@ -123,48 +123,43 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
                     print(
                         f"Processing chunks starting at paragraph {start}/{len(paragraphs)}"
                     )
-
                 max_end = min(start + max_chunk_paragraphs, len(paragraphs))
-
                 for end in range(start, max_end):
                     chunks_checked += 1
                     current_chunk = "\n".join(paragraphs[start : end + 1])
                     chunk_words = current_chunk.split()
                     chunk_length = len(chunk_words)
-
                     if chunk_length > target_len[g - 1][1]:
                         continue
-
                     if chunk_length < target_len[g - 1][0]:
                         continue
-
-                    meets_criteria, new_words_intext, unique_words_intext = (
-                        analyze_chunk(
-                            current_chunk,
-                            chunk_words,
-                            chunk_length,
-                            old_words_set,
-                            new_words_set,
-                            uwords_set,
-                            synonyms,
-                            same_roots,
-                            infs,
-                            transformed_cache,
-                            g,
-                            s,
-                        )
+                    (
+                        meets_criteria,
+                        new_words_intext,
+                        unique_words_intext,
+                        modified_chunk,
+                    ) = analyze_chunk(
+                        current_chunk,
+                        chunk_words,
+                        chunk_length,
+                        old_words_set,
+                        new_words_set,
+                        uwords_set,
+                        synonyms,
+                        same_roots,
+                        infs,
+                        transformed_cache,
+                        g,
+                        s,
                     )
-
                     if meets_criteria:
                         chunks_written += 1
                         if not section_headers_written[s]:
                             section_headers_written[s] = True
                             print(f"found a text for the section: {s}!!!")
-
                         write_chunk_to_file(
-                            current_chunk, new_words_intext, unique_words_intext
+                            modified_chunk, new_words_intext, unique_words_intext
                         )
-
             print(
                 f"Section {s} complete. Checked {chunks_checked} chunks, wrote {chunks_written} chunks"
             )
@@ -183,10 +178,15 @@ def analyze_chunk(
     transformed_cache: Dict[str, List[str]],
     grade: int,
     section: int,
-) -> Tuple[bool, Set[str], Set[str]]:  # helper function - analyzes each separate chunk
+) -> Tuple[bool, Set[str], Set[str], str]:
     transformed_words: List[str] = []
+    word_positions: Dict[str, List[int]] = {}
 
-    for word in chunk_words:
+    for i, word in enumerate(chunk_words):
+        if word not in word_positions:
+            word_positions[word] = []
+        word_positions[word].append(i)
+
         if word in transformed_cache:
             transformed_words.extend(transformed_cache[word])
         else:
@@ -199,21 +199,35 @@ def analyze_chunk(
             transformed_cache[word] = result
             transformed_words.extend(result)
 
-    for h, word in enumerate(transformed_words):
-        if word in synonyms and word in same_roots and word not in uwords_set:
-            good_synonyms = ""
-            good_same_roots = ""
+    modified_chunk_words = chunk_words.copy()
 
-            for synonym in synonyms[word]:
-                if synonym in new_words_set:
-                    good_synonyms += "!" + synonym
+    for word in word_positions:
+        if word in transformed_cache:
+            word_transforms = transformed_cache[word]
+            for transform_word in word_transforms:
+                good_synonyms = ""
+                good_same_roots = ""
+                synonym_words: List[str] = []
+                same_root_words: List[str] = []
+                if transform_word in synonyms:
+                    for synonym in synonyms[transform_word]:
+                        if synonym in new_words_set:
+                            good_synonyms += "!" + synonym
+                            synonym_words.append(synonym)
+                if transform_word in same_roots:
+                    for same_root in same_roots[transform_word]:
+                        if same_root in new_words_set:
+                            good_same_roots += "#" + same_root
+                            same_root_words.append(same_root)
+                if good_synonyms or good_same_roots:
+                    for pos in word_positions[word]:
+                        modified_chunk_words[pos] = (
+                            f"{word} ({good_synonyms}{good_same_roots})"
+                        )
+                    transformed_words.extend(synonym_words)
+                    transformed_words.extend(same_root_words)
 
-            for same_root in same_roots[word]:
-                if same_root in new_words_set:
-                    good_same_roots += "#" + same_root
-
-            if good_synonyms or good_same_roots:
-                transformed_words[h] = good_synonyms + good_same_roots
+    modified_chunk = " ".join(modified_chunk_words)
 
     unknown_words = sum(1 for word in transformed_words if word not in old_words_set)
     unknown_per = unknown_words / chunk_length
@@ -232,7 +246,7 @@ def analyze_chunk(
         unknown_per < 1 and new_words_cov > 3 and unique_words_cov >= 0
     )  # benchmarks
 
-    return meets_criteria, new_words_intext, unique_words_intext
+    return meets_criteria, new_words_intext, unique_words_intext, modified_chunk
 
 
 def write_chunk_to_file(
@@ -248,7 +262,6 @@ def write_chunk_to_file(
             + ", ".join(new_words_intext)
             + "\nКоличество уникальных слов: "
             + str(len(unique_words_intext))
-            + " | "
             + "\nУникальные слова: "
             + ", ".join(unique_words_intext)
             + "\n"
