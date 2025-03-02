@@ -1,1 +1,3 @@
-infinitives.json
+.vscode
+**_pycache__
+data/infinitives.json

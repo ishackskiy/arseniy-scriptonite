@@ -22,11 +22,11 @@ target_len = [
     (60, 800),
 ]  # здесь можно менять числа
 TXT_FILE = "testtext.txt"
-JSON_FILE = "jsons/vocab.json"
-JSON_INFINITIVE = "infinitives.json"
-JSON_SYNONYMS = "jsons/synonyms.json"
-JSON_UNIQUE = "jsons/unique_words.json"
-JSON_SAME_ROOTS = "jsons/sameroots.json"
+JSON_FILE = "data/vocab.json"
+JSON_INFINITIVE = "data/infinitives.json"
+JSON_SYNONYMS = "data/synonyms.json"
+JSON_UNIQUE = "data/unique_words.json"
+JSON_SAME_ROOTS = "data/sameroots.json"
 
 
 punctuation = punctuation + "«»" + '"' + '"' + "'" + "-" + "—" + "–"
@@ -85,7 +85,7 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
 
     print(f"Total paragraphs found: {len(paragraphs)}")  # Debug print
 
-    with open("infinitives.json", "r", encoding="utf-8") as file:
+    with open("data/infinitives.json", "r", encoding="utf-8") as file:
         infs: Dict[str, Any] = json.load(file)
     organized_data: Dict[int, Dict[int, List[str]]] = process_json(JSON_FILE)
     unique_words: Dict[int, Dict[int, List[str]]] = process_json(JSON_UNIQUE)
@@ -96,7 +96,14 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
 
     section_headers_written: Dict[int, bool] = {}
 
-    for g, sections in [(7, range(1, 13))]:  # now change grade and sections here
+    for g, sections in [
+        (2, range(1, 8)),
+        (3, range(1, 13)),
+        (4, range(1, 13)),
+        (5, range(1, 13)),
+        (6, range(1, 13)),
+        (7, range(1, 13)),
+    ]:  # now change grade and sections here
         print(f"Processing grade {g}")
         for s in sections:
             print(f"Processing section {s}")
@@ -147,7 +154,6 @@ def Arseniy(text: str) -> None:  # main function - takes text and filters it
                         )
                     )
 
-                    # If the chunk meets criteria, write to file
                     if meets_criteria:
                         chunks_written += 1
                         if not section_headers_written[s]:
@@ -225,7 +231,9 @@ def analyze_chunk(
     new_words_cov = len(new_words_intext)
     unique_words_cov = len(unique_words_intext)
 
-    meets_criteria = unknown_per < 1 and new_words_cov > 3 and unique_words_cov >= 0
+    meets_criteria = (
+        unknown_per < 1 and new_words_cov > 3 and unique_words_cov >= 0
+    )  # benchmarks
 
     return meets_criteria, new_words_intext, unique_words_intext
 
